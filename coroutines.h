@@ -6,20 +6,22 @@
 template<class return_type>
 class coroutine {
 	std::condition_variable cv;
-	std::condition_variable cv_initiate;
-	std::mutex mtx_initiate;
 	std::mutex mtx;
-	bool initiated = 0;
-	std::atomic< bool> executing;
-	volatile bool terminating;
+	volatile bool initiated = 0;
+	volatile bool executing = 0;
+	volatile bool terminating = 0;
 	std::thread*coroutine_code;
-	std::thread*initiate = 0;
 	return_type return_value = {};
 protected:
-	coroutine() :mtx(), coroutine_code(0), terminating(0) {
+	coroutine() :mtx(), coroutine_code(0), terminating(0),executing(1) {}
+	~coroutine() {
+		destroy_this();
+	}
+	void prepare_reset() {
+		terminating = 0;
 		executing = 1;
 	}
-	~coroutine() {
+	void destroy_this() {
 		terminating = 1;
 		executing = 0;
 		cv.notify_all();
@@ -29,27 +31,13 @@ protected:
 			coroutine_code = 0;
 		}
 	}
-	void prepare() {
-		initiate = new std::thread([this]() {
-			std::unique_lock<std::mutex>ul(mtx_initiate);
-			cv_initiate.wait(ul, [this]() {return initiated; });
-		});
-	}
 	void set_coroutine(std::thread*code){
 		coroutine_code = code;
-		std::unique_lock<std::mutex>ul(mtx);
-		initiated = 1;
-		cv_initiate.notify_all();
-		cv.wait(ul, [this]() {return !executing; });
 	}
 	void init_coroutine() {
-		initiate->join();
-		delete initiate;
-		initiate = 0;
-		executing = 0;
 		std::unique_lock<std::mutex>ul(mtx);
+		executing = 0;
 		cv.notify_all();
-		
 		cv.wait(ul, [this]() {return executing||terminating; });
 	};
 	bool _yield(return_type rv) {
@@ -71,7 +59,6 @@ protected:
 		executing = 1;
 		std::unique_lock<std::mutex>ul(mtx);
 		cv.notify_all();
-		
 		cv.wait(ul, [this]() {return !executing; });
 		ul.unlock();
 		return return_value;
@@ -81,26 +68,27 @@ protected:
 		terminating = 1;
 		if (coroutine_code) {
 			executing = 0;
-			
 			cv.notify_all();
 		}
 	}
 public:
+	coroutine(const coroutine&rhs) = delete;
+	coroutine&operator=(const coroutine&rhs) = delete;
+	operator bool()const{ return coroutine_code && !terminating; }
 	return_type operator()() { return call(); }
 	bool is_terminated()const { return !coroutine_code||terminating; }
 };
-#define COROUTINE_BEGIN(return_type,cname)\
-class cname : public coroutine<return_type> {\
-public:\
-	cname() :coroutine(){prepare();\
-		set_coroutine(\
-			new std::thread([this]() \
-			{init_coroutine();_terminate(f());}\
-		));}\
-private: return_type f()
+
+//Interface
+#define COROUTINE_SET set_coroutine(new std::thread([this](){init_coroutine();_terminate(f());}))
+#define COROUTINE_RESET destroy_this();prepare_reset();COROUTINE_SET
+#define COROUTINE_BEGIN(return_type,cname)class cname : public coroutine<return_type> {public:cname(){COROUTINE_SET;}void reset(){COROUTINE_RESET;}private: return_type f()
 #define COROUTINE_END }
 #define COROUTINE_CALLER(return_type) public:return_type operator()
 #define COROUTINE_CALL return call()
 #define COROUTINE_VAR private:
 #define COROUTINE_SUBROUTINE private:
 #define COROUTINE_YIELD(value)if(_yield(value))return value;
+#define COROUTINE_YIELD2(value,extra)if(_yield(value)){extra;return value;}//executes extra code on termination
+#define COROUTINE_STD_CALLER(return_type) public:return_type operator()(){return call();}
+#define FRIEND_COROUTINE(cname)friend class cname
