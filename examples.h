@@ -35,10 +35,28 @@ COROUTINE_BEGIN(int,example2)//usually this is enough for a coroutine
 	return 1;
 }
 COROUTINE_END;
+
+COROUTINE_BEGIN(int,example3)
+{
+	int*in_heap_allocated=new int[10];
+	COROUTINE_YIELD2(delete[]in_heap_allocated;,34);//a coroutine can return after every COROUTINE_YIELD call
+	//if memory is allocated in the heap it has to be freed before termination
+	//for that use COROUTINE_YIELD2() with the first parameter code to free memory on termination 
+	//and the second parameter the value to yield
+	
+	//do some code
+	delete[]in_heap_allocated;
+	return 1;
+}
+COROUTINE_END;
 example2 e2;
 
 int main(){
-	while(!e2.is_terminated())//you can check if the coroutine terminated by calling is_terminated() 
+	while(!e2.is_terminated())//you can check if the coroutine terminated by calling is_terminated() or calling the .operator bool() operator
 		e2();//to call the coroutine simply use the normal syntax for calling a function
-	e1(10);//example1 has caller defined so you can not call the standard caller
+	e2.reset();//you can restart the coroutine
+	while(e2)
+		e2();
+	e1(10);//example1 has no caller defined that takes no parameter
+	//example1 has a custom caller that takes one parameter
 }
