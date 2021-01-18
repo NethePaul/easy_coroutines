@@ -2,7 +2,7 @@
 #include<iostream>
 
 /**/
-int gloable_stco() {//state of funciton stored gloably
+int globale_stco() {//state of funciton stored globally
 	static int i;// all variables must be defined statically before the actual coroutine begins
 	static int j;
 	co_init;
@@ -16,7 +16,7 @@ int gloable_stco() {//state of funciton stored gloably
 	co_end;
 }
 #include<string>
-std::string gloable_stco_with_abstract_return_type() {//state of funciton stored gloably
+std::string globale_stco_with_abstract_return_type() {//state of funciton stored globally
 	static int i;
 	static int j;
 	co_init;
@@ -69,14 +69,14 @@ int stco_alike_member_function(stco_vars1&r) {//state of funciton stored local t
 
 void example() {
 	for (int i = 0; i < 24; i++)
-		std::cout << i << " :	" << gloable_stco() << std::endl;
+		std::cout << i << " :	" << globale_stco() << std::endl;
 	for (int i = 0; i < 24; i++)
-		std::cout << i << " :	" << gloable_stco() << std::endl;
+		std::cout << i << " :	" << globale_stco() << std::endl;
 
 	for (int i = 0; i < 24; i++)
-		std::cout << i << " :	" << gloable_stco_with_abstract_return_type() << std::endl;
+		std::cout << i << " :	" << globale_stco_with_abstract_return_type() << std::endl;
 	for (int i = 0; i < 24; i++)
-		std::cout << i << " :	" << gloable_stco_with_abstract_return_type() << std::endl;
+		std::cout << i << " :	" << globale_stco_with_abstract_return_type() << std::endl;
 
 	stco_vars2 i2;
 	for (int i = 0; i < 24; i++)
