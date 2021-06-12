@@ -1,17 +1,17 @@
 //Interface at end of file
 #ifndef _COROUTINE_THREAD_SYNCHRONISATION_
-#ifndef initialset//coroutine is a template class that needs sligetly diffrent code for <void> and all other datatypes
+#ifndef initialset//coroutine is a template class that needs sligetly diffrent code for <void> than all other datatypes
 #define initialset 1//generic definition
 #elif initialset == 1
 #define initialset 2//void definintion
 #define _COROUTINE_THREAD_SYNCHRONISATION_
 #endif
-#if initialset==1
+#if initialset==1//generic definition
 #include<thread>
 #include<condition_variable>
 #include<mutex>
 template<class return_type>class coroutine{
-#else initialset==2
+#else initialset==2//void definintion
 template<>class coroutine<void> {
 	using return_type = void;
 #endif
@@ -116,7 +116,7 @@ public:
 #endif//_COROUTINE_THREAD_SYNCHRONISATION
 #ifndef _COROUTINE_PREPROZESSOR_GUARD_
 #define _COROUTINE_PREPROZESSOR_GUARD_
-#include"coroutines.h"//this file has to be included twice for the full implementation
+#include"coroutines.h"//this file has to be included twice for the <void> implementation
 #undef initialset
 #endif
 #ifndef _COROUTINE_INTERFACE_
